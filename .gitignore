@@ -1,0 +1,4 @@
+*.pyc
+baselines/
+wandb/
+__pycache__/

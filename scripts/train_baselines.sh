@@ -1,0 +1,6 @@
+python baselines/train_ppo_base.py --environment "CartPole-v1" --seed 0 --max_steps 100000 --output_dir "baselines/pretrained_policies" 
+echo "CartPole-v1 done"
+python baselines/train_ppo_base.py --environment "LunarLander-v2" --seed 0 --max_steps 100000 --output_dir "baselines/pretrained_policies" 
+echo "LunarLander-v2 done"
+python baselines/train_ppo_base.py --environment "FrozenLake-v1" --seed 0 --max_steps 100000 --output_dir "baselines/pretrained_policies" 
+echo "FrozenLake-v1 done"
