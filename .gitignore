@@ -1,4 +1,4 @@
 *.pyc
-baselines/
+pretrained_policies/
 wandb/
 __pycache__/
