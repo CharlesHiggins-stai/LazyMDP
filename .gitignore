@@ -1,4 +1,6 @@
 *.pyc
+optimal_pretained_policies/
+suboptimal_pretained_policies/
 pretrained_policies/
 wandb/
 __pycache__/
