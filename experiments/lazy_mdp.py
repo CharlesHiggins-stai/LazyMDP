@@ -36,7 +36,7 @@ def get_default_policy(env:str = None, file_path:str = None) -> PPO:
         PPO: _description_
     """
     if env != None:
-        file_path = "baselines/pretrained_policies/ppo_" + env + "_0"
+        file_path = "baselines/suboptimal_pretrained_policies/ppo_" + env + "_0"
     try:
         policy = PPO.load(file_path)
     except:
@@ -52,6 +52,7 @@ def train_lazy_mdp(
     wandb_project_name = "LazyMDP", 
     env_reward_threshold: int = 50,
     penalty: float = 1.0,
+    tags = ["baseline", "ppo"],
     **kwargs):
     """Train a LazyMDP policy for a given environment.
 
@@ -75,7 +76,7 @@ def train_lazy_mdp(
     wandb.init(
         project=wandb_project_name, 
         sync_tensorboard=True,
-        tags = ["experiment", "ppo", environment],
+        tags = [*tags, environment],
         config=config
         )
     
@@ -115,6 +116,8 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', type=str, default = "experiments/data", help='Directory to save output results.')
     parser.add_argument('--env_reward_threshold', type=int, default = 50, help='Reward threshold to stop training.')
     parser.add_argument('--penalty', type=float, default = -1, help='Penalty for selecting the lazy action.')
+    parser.add_argument('--tags', type=list, nargs='+', default = ["experiment", "ppo"], help='Tags for wandb runs')
+
     # Parse the arguments
     args = parser.parse_args()
 
@@ -130,6 +133,7 @@ if __name__ == "__main__":
         output_dir = args.output_dir, 
         total_steps = args.max_steps, 
         env_reward_threshold=args.env_reward_threshold,
-        penalty=args.penalty
+        penalty=args.penalty,
+        tags = args.tags
     )
     print("Done")

@@ -11,7 +11,15 @@ import argparse
 import os
 
 
-def train_default_policy(environment:str, seed:int = 0, output_dir:str = "", total_steps:int = 25000, wandb_project_name = "LazyMDP", env_reward_threshold: int = 50, **kwargs):
+def train_default_policy(
+    environment:str, 
+    seed:int = 0, 
+    output_dir:str = "", 
+    total_steps:int = 25000, 
+    wandb_project_name = "LazyMDP", 
+    env_reward_threshold: int = 50, 
+    tags = ["baseline", "ppo"],
+    **kwargs):
     """Train a default PPO policy on a given environment
 
     Args:
@@ -30,7 +38,7 @@ def train_default_policy(environment:str, seed:int = 0, output_dir:str = "", tot
     wandb.init(
         project=wandb_project_name, 
         sync_tensorboard=True,
-        tags = ["baseline", "ppo", environment],
+        tags = [*tags, environment],
         config=config
         )
     
@@ -65,6 +73,7 @@ if __name__ == "__main__":
     parser.add_argument('--max_steps', type=int, default= 25000, help='Maximum number of steps to simulate.')
     parser.add_argument('--output_dir', type=str, default = "baselines/pretrained_policies", help='Directory to save output results.')
     parser.add_argument('--env_reward_threshold', type=int, default = 50, help='Reward threshold to stop training.')
+    parser.add_argument('--tags', type=list, nargs='+', default = ["baseline", "ppo"], help='Tags for wandb runs')
     # Parse the arguments
     args = parser.parse_args()
 
