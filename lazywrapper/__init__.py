@@ -1,1 +1,2 @@
-from .lazy_wrapper import LazyWrapper
+from .lazy_wrapper import LazyWrapper, LastObservationWrapper
+from .custom_callbacks import ActionProportionCallback
