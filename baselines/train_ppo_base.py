@@ -73,7 +73,7 @@ if __name__ == "__main__":
     parser.add_argument('--max_steps', type=int, default= 25000, help='Maximum number of steps to simulate.')
     parser.add_argument('--output_dir', type=str, default = "baselines/pretrained_policies", help='Directory to save output results.')
     parser.add_argument('--env_reward_threshold', type=int, default = 50, help='Reward threshold to stop training.')
-    parser.add_argument('--tags', type=list, nargs='+', default = ["baseline", "ppo"], help='Tags for wandb runs')
+    parser.add_argument('--tags', nargs='+', default = ["baseline", "ppo"], help='Tags for wandb runs')
     # Parse the arguments
     args = parser.parse_args()
 
