@@ -37,8 +37,8 @@ def train_default_policy(
         return _init
     
     # Set up Parallel environments -- vec env for trainig, single for evaluation
-    vec_env = make_vec_env(env_id=make_atari_env(environment), n_envs=4)
-    eval_env = make_vec_env(env_id=make_atari_env(environment), n_envs=4)
+    vec_env = make_vec_env(env_id=make_atari_env(environment), n_envs=8)
+    eval_env = make_vec_env(env_id=make_atari_env(environment), n_envs=8)
     # Set up Callbacks for evaluation
     # Stop training when the model reaches the reward threshold
     callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=env_reward_threshold, verbose=1)
