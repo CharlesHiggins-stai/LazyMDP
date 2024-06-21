@@ -80,8 +80,7 @@ if __name__ == "__main__":
     wandb.init(
         project="LazyMDP", 
         sync_tensorboard=True,
-        tags = [*args.tags, args.environment],
-        mode = "disabled"
+        tags = [*args.tags, args.environment]
         )
     
     wandb.config.update(args)
