@@ -1,3 +1,4 @@
+# define the fixed variables
 output_dir="experiments/pretrained_policies"
 max_steps=1000000
 seed=0
