@@ -6,6 +6,8 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.atari_wrappers import AtariWrapper
+from stable_baselines3.common.env_util import make_atari_env
+from stable_baselines3.common.vec_env import VecFrameStack
 from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnRewardThreshold
 from wandb.integration.sb3 import WandbCallback
 import wandb
@@ -17,9 +19,9 @@ from lazywrapper.custom_callbacks import ActionProportionCallback
 import argparse
 import os
 
-def make_custom_atari_env(original_env, n_envs, seed, loaded_default_policy, penalty):
+def make_custom_atari_env(original_env, loaded_default_policy, penalty):
     def _init():
-        env = LazyWrapper(LastObservationWrapper(AtariWrapper(gym.make(original_env))), default_policy=loaded_default_policy, penalty = penalty)
+        env = LazyWrapper(LastObservationWrapper(gym.make(original_env)), default_policy=loaded_default_policy, penalty = penalty)
         return env
     return _init
 
@@ -69,12 +71,13 @@ def train_lazy_mdp(
 
     default_policy = get_default_policy(env=environment)
     # Set up Parallel environments -- vec env for trainig, single for evaluation
-    vec_env = make_vec_env(env_id=make_custom_atari_env(environment, default_policy, penalty), n_envs=4)
-    eval_env = make_vec_env(env_id=make_custom_atari_env(environment, default_policy, penalty), n_envs=1)
+    vec_env = make_atari_env(env_id=make_custom_atari_env(environment, default_policy, penalty), n_envs=4)
+    vec_env = VecFrameStack(vec_env, n_stack=4)
+    # eval_env = make_vec_env(env_id=make_custom_atari_env(environment, default_policy, penalty), n_envs=1)
     # Set up Callbacks for evaluation
     # Stop training when the model reaches the reward threshold
     callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=env_reward_threshold, verbose=1)
-    eval_callback = EvalCallback(eval_env, callback_on_new_best=callback_on_best, n_eval_episodes=10, eval_freq=1000, verbose=1)
+    eval_callback = EvalCallback(vec_env, callback_on_new_best=callback_on_best, n_eval_episodes=10, eval_freq=1000, verbose=1)
     # set up callback to record action proportions during evaluation
     proportion_callback = ActionProportionCallback(eval_env, verbose=1)
     # setup wandb callback
