@@ -1,7 +1,8 @@
 # training imports
 from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.env_util import make_atari_env
+from stables_baselines3.common.vec_env import VecFrameStack 
 from stable_baselines3.common.atari_wrappers import AtariWrapper
 from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnRewardThreshold
 from wandb.integration.sb3 import WandbCallback
@@ -13,10 +14,10 @@ import os
 
 
 def train_default_policy(
-    environment:str = "ALE/Breakout-v5", 
+    environment:str = "BreakoutNoFrameskip-v4", 
     seed:int = 0, 
     output_dir:str = "", 
-    total_steps:int = 25000, 
+    total_steps:int = 10000000, 
     wandb_project_name = "LazyMDP", 
     env_reward_threshold: int = 400, 
     tags = ["baseline", "ppo", "atari"],
@@ -30,22 +31,29 @@ def train_default_policy(
         total_steps (int, optional): _description_. Defaults to 25000.
     """
 
-    def make_atari_env(original_env):
-        def _init():
-            env = AtariWrapper(gym.make(original_env))
-            return env
-        return _init
+    # def make_internal_atari_env(original_env):
+    #     def _init():
+    #         env = AtariWrapper(gym.make(original_env))
+    #         return env
+    #     return _init
     
     # Set up Parallel environments -- vec env for trainig, single for evaluation
-    vec_env = make_vec_env(env_id=make_atari_env(environment), n_envs=8)
-    eval_env = make_vec_env(env_id=make_atari_env(environment), n_envs=8)
+    vec_env = make_atari_env(environment, n_envs=4, seed=seed)  
+    vec_env = VecFrameStack(vec_env)
+    eval_env = make_atari_env(environment, n_envs=4, seed=seed)  
+    eval_env = VecFrameStack(vec_env)
     # Set up Callbacks for evaluation
     # Stop training when the model reaches the reward threshold
     callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=env_reward_threshold, verbose=1)
     eval_callback = EvalCallback(eval_env, callback_on_new_best=callback_on_best, n_eval_episodes=10, eval_freq=1000, verbose=1)
     wandb_callback = WandbCallback(verbose=2)
     # Set up model 
-    model = PPO("CnnPolicy", vec_env, verbose=1, tensorboard_log=f"{output_dir}/tensorboard")
+    model = PPO(
+        "CnnPolicy", 
+        vec_env, 
+        verbose=1,
+        tensorboard_log=f"{output_dir}/tensorboard"
+        )
     # run model
     model.learn(total_timesteps=total_steps, callback=[eval_callback, wandb_callback])
     model.save(f"{output_dir}/ppo_{environment}_{seed}")
