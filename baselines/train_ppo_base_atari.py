@@ -2,7 +2,7 @@
 from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.env_util import make_atari_env
-from stables_baselines3.common.vec_env import VecFrameStack 
+from stable_baselines3.common.vec_env import VecFrameStack 
 from stable_baselines3.common.atari_wrappers import AtariWrapper
 from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnRewardThreshold
 from wandb.integration.sb3 import WandbCallback
@@ -39,13 +39,12 @@ def train_default_policy(
     
     # Set up Parallel environments -- vec env for trainig, single for evaluation
     vec_env = make_atari_env(environment, n_envs=4, seed=seed)  
-    vec_env = VecFrameStack(vec_env)
-    eval_env = make_atari_env(environment, n_envs=4, seed=seed)  
-    eval_env = VecFrameStack(vec_env)
+    vec_env = VecFrameStack(vec_env, n_stack=4)
+ 
     # Set up Callbacks for evaluation
     # Stop training when the model reaches the reward threshold
     callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=env_reward_threshold, verbose=1)
-    eval_callback = EvalCallback(eval_env, callback_on_new_best=callback_on_best, n_eval_episodes=10, eval_freq=1000, verbose=1)
+    eval_callback = EvalCallback(vec_env, callback_on_new_best=callback_on_best, n_eval_episodes=10, eval_freq=1000, verbose=1)
     wandb_callback = WandbCallback(verbose=2)
     # Set up model 
     model = PPO(
