@@ -43,7 +43,7 @@ def train_default_policy(
         )
     
     # Set up Parallel environments -- vec env for trainig, single for evaluation
-    vec_env = make_vec_env(environment, n_envs=4)
+    vec_env = make_vec_env(environment, n_envs=8)
     eval_env = make_vec_env(environment)
     # Set up Callbacks for evaluation
     # Stop training when the model reaches the reward threshold
