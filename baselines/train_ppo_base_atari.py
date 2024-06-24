@@ -52,7 +52,7 @@ def train_default_policy(
         vec_env, 
         verbose=1,
         tensorboard_log=f"{output_dir}/tensorboard", 
-         batch_size=256, 
+        batch_size=256, 
         clip_range=0.1, 
         ent_coef=0.01, 
         learning_rate=2.5e-4, 

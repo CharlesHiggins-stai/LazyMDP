@@ -77,8 +77,7 @@ def train_lazy_mdp(
         project=wandb_project_name, 
         sync_tensorboard=True,
         tags = [*tags, environment],
-        config=config,
-        mode = "disabled"
+        config=config
         )
     
     default_policy = get_default_policy(env=environment)

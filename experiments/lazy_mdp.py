@@ -1,6 +1,6 @@
 # set the path to the project directory
 import sys
-sys.path.append('/Users/charleshiggins/Personal/CharlesPhD/CodeRepo/xai_intervention/LazyMDP/')
+sys.path.append('/home/tromero_client/LazyMDP')
 # training imports
 from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
