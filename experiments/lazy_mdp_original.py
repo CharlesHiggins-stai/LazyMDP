@@ -72,7 +72,7 @@ def train_lazy_mdp(
     """
 
     
-    default_policy = get_default_policy(env=environment)
+    default_policy = get_default_policy(env=environment, file_path=wandb.config.default_policy_path, optimal=wandb.config.optimal_default_policy)
     # Set up Parallel environments -- vec env for trainig, single for evaluation
     vec_env = make_vec_env(env_id=make_custom_env(environment, default_policy, penalty), n_envs=4)
     eval_env = make_vec_env(env_id=make_custom_env(environment, default_policy, penalty), n_envs=1)
@@ -108,6 +108,8 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', type=str, default = "experiments/data", help='Directory to save output results.')
     parser.add_argument('--env_reward_threshold', type=int, default = 50, help='Reward threshold to stop training.')
     parser.add_argument('--penalty', type=float, default = -1, help='Penalty for selecting the lazy action.')
+    parser.add_argument('--default_policy_path', type=str, default = None, help='File path for default policy')
+    parser.add_argument('--optimal_default_policy', type=bool, default = False, help='Use optimal default policy --- defaults to suboptimal policy')
     parser.add_argument('--tags', nargs='+', default = ["experiment", "ppo"], help='Tags for wandb runs')
 
     # Parse the arguments

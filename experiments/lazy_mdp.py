@@ -70,21 +70,7 @@ def train_lazy_mdp(
         penalty (int, optional): Penalty for selecting the lazy action. Defaults to -1.
     """
     # set wandb config
-    config = {
-        "environment": environment, 
-        "seed": seed,
-        "total_steps": total_steps, 
-        "penalty": penalty
-        }
-    
-    wandb.init(
-        project=wandb_project_name, 
-        sync_tensorboard=True,
-        tags = [*tags, environment],
-        config=config
-        )
-    
-    default_policy = get_default_policy(env=environment)
+    default_policy = get_default_policy(env=environment, file_path=wandb.config.default_policy_path, optimal=wandb.config.optimal_default_policy)
     # Set up Parallel environments -- vec env for trainig, single for evaluation
     vec_env = make_vec_env(env_id=make_custom_env(environment, default_policy, penalty), n_envs=4)
     eval_env = make_vec_env(env_id=make_custom_env(environment, default_policy, penalty), n_envs=1)
@@ -120,10 +106,26 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', type=str, default = "experiments/data", help='Directory to save output results.')
     parser.add_argument('--env_reward_threshold', type=int, default = 50, help='Reward threshold to stop training.')
     parser.add_argument('--penalty', type=float, default = -1, help='Penalty for selecting the lazy action.')
+    parser.add_argument('--default_policy_path', type=str, default = None, help='File path for default policy')
+    parser.add_argument('--optimal_default_policy', type=bool, default = False, help='Use optimal default policy --- defaults to suboptimal policy')
     parser.add_argument('--tags', nargs='+', default = ["experiment", "ppo"], help='Tags for wandb runs')
 
     # Parse the arguments
     args = parser.parse_args()
+
+    
+    wandb.init(
+        project="LazyMDP", 
+        sync_tensorboard=True,
+        tags = [*args.tags, args.environment]
+        )
+    
+    wandb.config.update(args)
+    extra_config = {
+        "experiment_class": "LazyMDP"
+        }
+    wandb.config.update(extra_config)
+    
 
     # Print the inputs (You can replace this section with the actual logic)
     print(f"Running simulation in environment: {args.environment}")

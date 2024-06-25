@@ -28,19 +28,6 @@ def train_default_policy(
         output_dir (str, optional): _description_. Defaults to "".
         total_steps (int, optional): _description_. Defaults to 25000.
     """
-    # set wandb config
-    config = {
-        "environment": environment, 
-        # "seed": seed,
-        "total_steps": total_steps
-        }
-    
-    wandb.init(
-        project=wandb_project_name, 
-        sync_tensorboard=True,
-        tags = [*tags, environment],
-        config=config
-        )
     
     # Set up Parallel environments -- vec env for trainig, single for evaluation
     vec_env = make_vec_env(environment, n_envs=8)
@@ -77,6 +64,16 @@ if __name__ == "__main__":
     # Parse the arguments
     args = parser.parse_args()
 
+        # set wandb config
+    extra_config = {
+        "experiment_class": "VanillaPPO", 
+        }
+    
+    wandb.init(
+        project="LazyMDP", 
+        sync_tensorboard=True,
+        tags = [*args.tags, args.environment]
+        )
     # Print the inputs (You can replace this section with the actual logic)
     print(f"Running simulation in environment: {args.environment}")
     print(f"Random seed: {args.seed}")

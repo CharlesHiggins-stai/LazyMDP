@@ -71,7 +71,7 @@ def train_lazy_mdp(
     """
 
     
-    default_policy = get_default_policy(env=environment)
+    default_policy = get_default_policy(env=environment, file_path=wandb.config.default_policy_path, optimal=wandb.config.optimal_default_policy)
     # Set up Parallel environments -- vec env for trainig, single for evaluation
     vec_env = make_vec_env(env_id=make_custom_env(original_env=environment, loaded_default_policy=default_policy, penalty=penalty, warmup_steps=wandb.config.warmup_steps), n_envs=4)
     # eval_env = make_vec_env(env_id=make_custom_env(environment, default_policy, penalty), n_envs=1)
