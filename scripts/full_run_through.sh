@@ -14,9 +14,9 @@ for i in $(seq 1 5); do
     echo "LunarLander-v2 done"
 
     # # now train lazy MDP original
-    python experiments/lazy_mdp_original.py --environment "CartPole-v1" --seed $i --max_steps 500_000 --output_dir "experiments/lazy_mdp_original_data" --env_reward_threshold 500 --penalty 0.5 --tags "ppo" "original LazyMDP"
+    python experiments/lazy_mdp_original.py --environment "CartPole-v1" --seed $i --max_steps 500_000 --output_dir "experiments/lazy_mdp_original_data" --env_reward_threshold 500 --penalty 0.25 --tags "ppo" "original LazyMDP"
     echo "Original Lazy MDP CartPole-v1 done"
-    python experiments/lazy_mdp_original.py --environment "LunarLander-v2" --seed $i --max_steps 500_000 --output_dir "experiments/lazy_mdp_original_data" --env_reward_threshold 200 --penalty 0.5 --tags "ppo" "original LazyMDP"
+    python experiments/lazy_mdp_original.py --environment "LunarLander-v2" --seed $i --max_steps 500_000 --output_dir "experiments/lazy_mdp_original_data" --env_reward_threshold 200 --penalty 0.25 --tags "ppo" "original LazyMDP"
     echo "Original LunarLander-v2 done"
 
 

@@ -65,20 +65,7 @@ def train_lazy_mdp(
         env_reward_threshold (int, optional): Threshold at which training is complete --- game has been won. Defaults to 50.
         penalty (int, optional): Penalty for selecting the lazy action. Defaults to -1.
     """
-    # set wandb config
-    config = {
-        "environment": environment, 
-        "seed": seed,
-        "total_steps": total_steps, 
-        "penalty": penalty
-        }
-    
-    wandb.init(
-        project=wandb_project_name, 
-        sync_tensorboard=True,
-        tags = [*tags, environment],
-        config=config
-        )
+
     
     default_policy = get_default_policy(env=environment)
     # Set up Parallel environments -- vec env for trainig, single for evaluation
@@ -126,6 +113,16 @@ if __name__ == "__main__":
     print(f"Random seed: {args.seed}")
     print(f"Maximum steps: {args.max_steps}")
     print(f"Output will be saved in: {args.output_dir}")
+    
+
+    
+    wandb.init(
+        project="LazyMDP", 
+        sync_tensorboard=True,
+        tags = [*args.tags, args.environment]
+        )
+    
+    wandb.config.update(args)
 
     train_lazy_mdp(
         environment = args.environment, 
