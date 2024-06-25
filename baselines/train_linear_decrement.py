@@ -119,6 +119,10 @@ if __name__ == "__main__":
         )
     
     wandb.config.update(args)
+    extra_config = {
+        "experiment_class": "Linear Decrement Baseline"
+        }
+    wandb.config.update(extra_config)
 
     train_default_policy(
         environment = args.environment, 
