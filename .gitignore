@@ -7,5 +7,6 @@ __pycache__/
 baselines/linear_dqn_policies/
 baselines/optimal_pretrained_policies/
 experiments/lazy_mdp_data/
-experiments/lazy_mdp_original_data
+experiments/lazy_mdp_original_data/
+experiments/lazy_mdp_delayed_start_data/
 *.zip

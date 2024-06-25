@@ -22,7 +22,7 @@ def make_custom_env(original_env, loaded_default_policy, penalty):
         return env
     return _init
 
-def get_default_policy(env:str = None, file_path:str = None) -> PPO:
+def get_default_policy(env:str = None, file_path:str = None, optimal:bool = False) -> PPO:
     """Get the default policy from a file path
 
     Args:
@@ -36,12 +36,17 @@ def get_default_policy(env:str = None, file_path:str = None) -> PPO:
         PPO: _description_
     """
     if env != None:
-        file_path = "baselines/suboptimal_pretrained_policies/ppo_" + env + "_0"
+        if optimal == False:
+            sub = "sub"
+        else:
+            sub = "" 
+        file_path = f"baselines/{sub}optimal_pretrained_policies/ppo_" + env + "_0"
     try:
         policy = PPO.load(file_path)
     except:
         raise ValueError("Could not load policy from file path")
     return policy
+
 
 
 def train_lazy_mdp(
@@ -123,6 +128,11 @@ if __name__ == "__main__":
         )
     
     wandb.config.update(args)
+    extra_config = {
+        "experiment_class": "LazyMDP original"
+        }
+    wandb.config.update(extra_config)
+    
 
     train_lazy_mdp(
         environment = args.environment, 
