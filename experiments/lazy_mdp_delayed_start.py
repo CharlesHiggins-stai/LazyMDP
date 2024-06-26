@@ -10,15 +10,21 @@ from wandb.integration.sb3 import WandbCallback
 import wandb
 import gymnasium as gym
 # custom imports
-from lazywrapper import LazyWrapperDelayedStart, LastObservationWrapper
-from lazywrapper.custom_callbacks import ActionProportionCallback
+from lazywrapper import LazyWrapperDelayedStart, LastObservationWrapper, LazyEvaluationWrapper
+from lazywrapper.custom_callbacks import ActionProportionCallback, OriginalEvalLogger
 # general imports
-import argparse
+import argparse 
 import os
 
 def make_custom_env(original_env, loaded_default_policy, penalty, warmup_steps):
     def _init():
         env = LazyWrapperDelayedStart(LastObservationWrapper(gym.make(original_env)), default_policy=loaded_default_policy, penalty = penalty, warmup_steps=warmup_steps)
+        return env
+    return _init
+
+def make_custom_eval_env(original_env, loaded_default_policy):
+    def _init():
+        env = LazyEvaluationWrapper(LastObservationWrapper(gym.make(original_env)), default_policy=loaded_default_policy)
         return env
     return _init
 
@@ -74,11 +80,13 @@ def train_lazy_mdp(
     default_policy = get_default_policy(env=environment, file_path=wandb.config.default_policy_path, optimal=wandb.config.optimal_default_policy)
     # Set up Parallel environments -- vec env for trainig, single for evaluation
     vec_env = make_vec_env(env_id=make_custom_env(original_env=environment, loaded_default_policy=default_policy, penalty=penalty, warmup_steps=wandb.config.warmup_steps), n_envs=4)
-    # eval_env = make_vec_env(env_id=make_custom_env(environment, default_policy, penalty), n_envs=1)
+    eval_env = make_vec_env(env_id=make_custom_eval_env(environment, default_policy), n_envs=1)
     # Set up Callbacks for evaluation
     # Stop training when the model reaches the reward threshold
     callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=env_reward_threshold, verbose=1)
-    eval_callback = EvalCallback(vec_env, callback_on_new_best=callback_on_best, n_eval_episodes=10, eval_freq=1000, verbose=1)
+    eval_callback_training = EvalCallback(vec_env, callback_on_new_best=callback_on_best, n_eval_episodes=10, eval_freq=1000, verbose=1)
+    eval_callback_basic = OriginalEvalLogger(eval_env, n_eval_episodes=10, eval_freq=1000, verbose=1, log_path = f"{output_dir}/eval_logs")
+
     # set up callback to record action proportions during evaluation
     proportion_callback = ActionProportionCallback(vec_env, verbose=1)
     # setup wandb callback
@@ -86,7 +94,7 @@ def train_lazy_mdp(
     # Set up model 
     model = PPO("MlpPolicy", vec_env, verbose=1, tensorboard_log=f"{output_dir}/tensorboard")
     # run model
-    model.learn(total_timesteps=total_steps, callback=[eval_callback, proportion_callback, wandb_callback])
+    model.learn(total_timesteps=total_steps, callback=[eval_callback_training, eval_callback_basic, proportion_callback, wandb_callback])
     model.save(f"{output_dir}/ppo_{environment}_{penalty}_{seed}")
 
     # obs = vec_env.reset()

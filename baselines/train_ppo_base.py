@@ -74,6 +74,8 @@ if __name__ == "__main__":
         sync_tensorboard=True,
         tags = [*args.tags, args.environment]
         )
+    wandb.config.update(args)
+    wandb.config.update(extra_config)
     # Print the inputs (You can replace this section with the actual logic)
     print(f"Running simulation in environment: {args.environment}")
     print(f"Random seed: {args.seed}")

@@ -76,3 +76,4 @@ class LazyWrapperDelayedStart(ActionWrapper):
                 return obs, reward - self.penalty, terminated, truncated, info
         else:
             return self.env.step(action)
+        
