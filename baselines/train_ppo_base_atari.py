@@ -38,7 +38,7 @@ def train_default_policy(
     #     return _init
     
     # Set up Parallel environments -- vec env for trainig, single for evaluation
-    vec_env = make_atari_env(environment, n_envs=4, seed=seed)  
+    vec_env = make_atari_env(environment, n_envs=8, seed=seed)  
     vec_env = VecFrameStack(vec_env, n_stack=4)
  
     # Set up Callbacks for evaluation
@@ -51,7 +51,15 @@ def train_default_policy(
         "CnnPolicy", 
         vec_env, 
         verbose=1,
-        tensorboard_log=f"{output_dir}/tensorboard"
+        tensorboard_log=f"{output_dir}/tensorboard", 
+        batch_size=256, 
+        clip_range=0.1, 
+        ent_coef=0.01, 
+        learning_rate=2.5e-4, 
+        gamma=0.99, 
+        lambda_=0.95, 
+        n_steps=128, 
+        n_epochs=4
         )
     # run model
     model.learn(total_timesteps=total_steps, callback=[eval_callback, wandb_callback])

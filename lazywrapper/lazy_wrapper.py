@@ -43,3 +43,37 @@ class LastObservationWrapper(ObservationWrapper):
 
     def get_last_observation(self):
         return self.last_observation
+
+class LazyWrapperDelayedStart(ActionWrapper):
+    def __init__(self, env: gym.Env, default_policy, penalty, warmup_steps, **kwargs):
+        super().__init__(env)
+        # save environment
+        self.env = env
+        self.warm_up_steps = warmup_steps
+        self.warm_up_steps_counter = 0
+        # inherit the observation space
+        self.observation_space = env.observation_space
+        # inherit the action space and + 1
+        self.action_space = Discrete(env.action_space.n + 1)
+        self.default_policy = default_policy
+        self.penalty = penalty
+        self.kwargs = kwargs
+        
+    def step(self, action):
+        if self.warm_up_steps_counter < self.warm_up_steps:
+            # increment counter
+            self.warm_up_steps_counter += 1
+        if action == self.action_space.n - 1:
+            # if action is lazy, call the default policy
+            obs, reward, terminated, truncated, info = self.env.step(
+                self.default_policy.predict(self.env.get_last_observation())[0]
+                )
+            if self.warm_up_steps_counter < self.warm_up_steps:
+                # if still in warm up, return the reward without penalty
+                return obs, reward, terminated, truncated, info
+            else:
+                # return the reward with penalty
+                return obs, reward - self.penalty, terminated, truncated, info
+        else:
+            return self.env.step(action)
+        

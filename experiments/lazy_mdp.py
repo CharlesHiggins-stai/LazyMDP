@@ -1,6 +1,6 @@
 # set the path to the project directory
 import sys
-sys.path.append('/Users/charleshiggins/Personal/CharlesPhD/CodeRepo/xai_intervention/LazyMDP/')
+sys.path.append('/home/tromero_client/LazyMDP')
 # training imports
 from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
@@ -10,8 +10,8 @@ from wandb.integration.sb3 import WandbCallback
 import wandb
 import gymnasium as gym
 # custom imports
-from lazywrapper import LazyWrapper, LastObservationWrapper
-from lazywrapper.custom_callbacks import ActionProportionCallback
+from lazywrapper import LazyWrapper, LastObservationWrapper, LazyEvaluationWrapper
+from lazywrapper.custom_callbacks import ActionProportionCallback, OriginalEvalLogger
 # general imports
 import argparse
 import os
@@ -22,7 +22,13 @@ def make_custom_env(original_env, loaded_default_policy, penalty):
         return env
     return _init
 
-def get_default_policy(env:str = None, file_path:str = None) -> PPO:
+def make_custom_eval_env(original_env, loaded_default_policy):
+    def _init():
+        env = LazyEvaluationWrapper(LastObservationWrapper(gym.make(original_env)), default_policy=loaded_default_policy)
+        return env
+    return _init
+
+def get_default_policy(env:str = None, file_path:str = None, optimal:bool = False) -> PPO:
     """Get the default policy from a file path
 
     Args:
@@ -36,7 +42,11 @@ def get_default_policy(env:str = None, file_path:str = None) -> PPO:
         PPO: _description_
     """
     if env != None:
-        file_path = "baselines/suboptimal_pretrained_policies/ppo_" + env + "_0"
+        if optimal == False:
+            sub = "sub"
+        else:
+            sub = "" 
+        file_path = f"baselines/{sub}optimal_pretrained_policies/ppo_" + env + "_0"
     try:
         policy = PPO.load(file_path)
     except:
@@ -66,28 +76,15 @@ def train_lazy_mdp(
         penalty (int, optional): Penalty for selecting the lazy action. Defaults to -1.
     """
     # set wandb config
-    config = {
-        "environment": environment, 
-        "seed": seed,
-        "total_steps": total_steps, 
-        "penalty": penalty
-        }
-    
-    wandb.init(
-        project=wandb_project_name, 
-        sync_tensorboard=True,
-        tags = [*tags, environment],
-        config=config
-        )
-    
-    default_policy = get_default_policy(env=environment)
+    default_policy = get_default_policy(env=environment, file_path=wandb.config.default_policy_path, optimal=wandb.config.optimal_default_policy)
     # Set up Parallel environments -- vec env for trainig, single for evaluation
     vec_env = make_vec_env(env_id=make_custom_env(environment, default_policy, penalty), n_envs=4)
-    eval_env = make_vec_env(env_id=make_custom_env(environment, default_policy, penalty), n_envs=1)
+    eval_env = make_vec_env(env_id=make_custom_eval_env(environment, default_policy), n_envs=1)
     # Set up Callbacks for evaluation
     # Stop training when the model reaches the reward threshold
     callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=env_reward_threshold, verbose=1)
-    eval_callback = EvalCallback(eval_env, callback_on_new_best=callback_on_best, n_eval_episodes=10, eval_freq=1000, verbose=1)
+    eval_callback_training = EvalCallback(vec_env, callback_on_new_best=callback_on_best, n_eval_episodes=10, eval_freq=1000, verbose=1)
+    eval_callback_basic = OriginalEvalLogger(eval_env, n_eval_episodes=10, eval_freq=1000, verbose=1, log_path = f"{output_dir}/eval_logs")
     # set up callback to record action proportions during evaluation
     proportion_callback = ActionProportionCallback(eval_env, verbose=1)
     # setup wandb callback
@@ -95,9 +92,9 @@ def train_lazy_mdp(
     # Set up model 
     model = PPO("MlpPolicy", vec_env, verbose=1, tensorboard_log=f"{output_dir}/tensorboard")
     # run model
-    model.learn(total_timesteps=total_steps, callback=[eval_callback, proportion_callback, wandb_callback])
+    model.learn(total_timesteps=total_steps, callback=[eval_callback_training, eval_callback_basic, proportion_callback, wandb_callback])
     model.save(f"{output_dir}/ppo_{environment}_{penalty}_{seed}")
-
+    wandb.save(f"{output_dir}/eval_logs/*")
     # obs = vec_env.reset()
     # while True:
     #     action, _states = model.predict(obs)
@@ -116,10 +113,26 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', type=str, default = "experiments/data", help='Directory to save output results.')
     parser.add_argument('--env_reward_threshold', type=int, default = 50, help='Reward threshold to stop training.')
     parser.add_argument('--penalty', type=float, default = -1, help='Penalty for selecting the lazy action.')
+    parser.add_argument('--default_policy_path', type=str, default = None, help='File path for default policy')
+    parser.add_argument('--optimal_default_policy', type=bool, default = False, help='Use optimal default policy --- defaults to suboptimal policy')
     parser.add_argument('--tags', nargs='+', default = ["experiment", "ppo"], help='Tags for wandb runs')
 
     # Parse the arguments
     args = parser.parse_args()
+
+    
+    wandb.init(
+        project="LazyMDP", 
+        sync_tensorboard=True,
+        tags = [*args.tags, args.environment]
+        )
+    
+    wandb.config.update(args)
+    extra_config = {
+        "experiment_class": "LazyMDP"
+        }
+    wandb.config.update(extra_config)
+    
 
     # Print the inputs (You can replace this section with the actual logic)
     print(f"Running simulation in environment: {args.environment}")

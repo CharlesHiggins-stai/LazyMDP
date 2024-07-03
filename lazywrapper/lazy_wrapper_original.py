@@ -4,7 +4,7 @@ from gymnasium.spaces import Discrete
 from gymnasium import ActionWrapper, ObservationWrapper
 
 
-class LazyWrapper(ActionWrapper):
+class LazyWrapperOriginal(ActionWrapper):
     def __init__(self, env: gym.Env, default_policy, penalty, **kwargs):
         super().__init__(env)
         # save environment
@@ -28,19 +28,4 @@ class LazyWrapper(ActionWrapper):
             obs, reward, terminated, truncated, info = self.env.step(action)
             return obs, reward - self.penalty, terminated, truncated, info
 
-class LastObservationWrapper(ObservationWrapper):
-    def __init__(self, env:gym.Env):
-        super().__init__(env)
-        self.last_observation = None
-        
-    def step(self, action):
-        observation, reward, terminated, truncated, info = self.env.step(action)
-        self.last_observation = observation
-        return observation, reward, terminated, truncated, info
 
-    def reset(self, **kwargs):
-        self.last_observation, info = self.env.reset(**kwargs)
-        return self.last_observation, info
-
-    def get_last_observation(self):
-        return self.last_observation
