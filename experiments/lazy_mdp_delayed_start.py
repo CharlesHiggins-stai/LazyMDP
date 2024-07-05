@@ -6,6 +6,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnRewardThreshold
+from baselines.random_policy import RandomPolicy
 from wandb.integration.sb3 import WandbCallback
 import wandb
 import gymnasium as gym
@@ -15,6 +16,7 @@ from lazywrapper.custom_callbacks import ActionProportionCallback, OriginalEvalL
 # general imports
 import argparse 
 import os
+import copy
 
 def make_custom_env(original_env, loaded_default_policy, penalty, warmup_steps):
     def _init():
@@ -28,29 +30,34 @@ def make_custom_eval_env(original_env, loaded_default_policy):
         return env
     return _init
 
-def get_default_policy(env:str = None, file_path:str = None, optimal:bool = False) -> PPO:
-    """Get the default policy from a file path
-
-    Args:
-        env (str, optional): the environment name. Defaults to None.
-        file_path (str, optional): Filepath for special cases --- e.g. if random policy selected. Defaults to None.
-
-    Raises:
-        ValueError: _description_
-
-    Returns:
-        PPO: _description_
+def get_default_policy(env:str = None, policy_type:str='suboptimal'):
+    """ 
+    Cheap and dirty function meant to be easy to read because it caused Too. Many. Fucking. Mistakes. So we're doing it the dumb way. 
+    Iterates through the various forms of policies, and builds the default policy  
     """
-    if env != None:
-        if optimal == False:
-            sub = "sub"
-        else:
-            sub = "" 
-        file_path = f"baselines/{sub}optimal_pretrained_policies/ppo_" + env + "_0"
-    try:
-        policy = PPO.load(file_path)
-    except:
-        raise ValueError("Could not load policy from file path")
+    
+    if policy_type not in ['optimal', "suboptimal", 'random']:
+        raise ValueError(f"default policy type {policy_type} not supported. Must be one of: ['optimal', suboptimal', 'random']")
+    elif policy_type == "optimal":
+        file_path = f"baselines/optimal_pretrained_policies/ppo_" + env + "_0"
+        try:
+            policy = PPO.load(file_path)
+        except:
+            raise ValueError(f"Could not load policy from file path: {file_path}")
+    elif policy_type == "suboptimal":
+        file_path = f"baselines/suboptimal_pretrained_policies/ppo_" + env + "_0"
+        try:
+            policy = PPO.load(file_path)
+        except:
+            raise ValueError(f"Could not load policy from file path: {file_path}")
+    elif policy_type == "random":
+        temp_env = gym.make(env)
+        action_space = copy.copy(temp_env.action_space)
+        del temp_env
+        policy = RandomPolicy(action_space=action_space)
+    else:
+        raise ValueError(f"Something went wrong here")
+    print("We are working with a {policy_type} default policy")
     return policy
 
 
@@ -77,7 +84,7 @@ def train_lazy_mdp(
     """
 
     
-    default_policy = get_default_policy(env=environment, file_path=wandb.config.default_policy_path, optimal=wandb.config.optimal_default_policy)
+    default_policy = get_default_policy(env=environment, policy_type=wandb.config.default_policy_type)
     # Set up Parallel environments -- vec env for trainig, single for evaluation
     vec_env = make_vec_env(env_id=make_custom_env(original_env=environment, loaded_default_policy=default_policy, penalty=penalty, warmup_steps=wandb.config.warmup_steps), n_envs=4)
     eval_env = make_vec_env(env_id=make_custom_eval_env(environment, default_policy), n_envs=1)
@@ -115,8 +122,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', type=str, default = "experiments/data", help='Directory to save output results.')
     parser.add_argument('--env_reward_threshold', type=int, default = 50, help='Reward threshold to stop training.')
     parser.add_argument('--penalty', type=float, default = -1, help='Penalty for selecting the lazy action.')
-    parser.add_argument('--default_policy_path', type=str, default = None, help='File path for default policy')
-    parser.add_argument('--optimal_default_policy', type=bool, default = False, help='Use optimal default policy --- defaults to suboptimal policy')
+    parser.add_argument('--default_policy_type', type=str, default="suboptimal", help= "The defining characteristic of the default policy")
     parser.add_argument('--warmup_steps', type=int, default = 1000, help='Number of steps to warm up before using the default policy.')
     parser.add_argument('--tags', nargs='+', default = ["experiment", "ppo"], help='Tags for wandb runs')
 
